@@ -105,4 +105,6 @@ OPENAI_API_KEY = "sk-your-actual-api-key-here"
 - **Audio parsing errors** – stick to short clips (<60s) and supported formats. Convert unusual codecs to WAV first.
 - **Quota or permission errors** – double-check you have access to transcription, text, and image endpoints and enough credits.
 
+  Link to deployed web app https://rahbarnisa-capstoneproject2-streamlit-app-bocvez.streamlit.app/ 
+
 Enjoy turning your voice sketches into visuals! 🎨
