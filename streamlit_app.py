@@ -16,8 +16,19 @@ logging.basicConfig(
 logger = logging.getLogger("voice_to_image_app")
 
 
+# Try to load from Streamlit secrets first (for deployed apps), then .env (for local dev)
 load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# Priority: Streamlit secrets > environment variable > None
+OPENAI_API_KEY = None
+try:
+    if hasattr(st, "secrets") and st.secrets:
+        OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY", None)
+except Exception:
+    pass  # Secrets not available (e.g., in local dev without .streamlit/secrets.toml)
+
+if not OPENAI_API_KEY:
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 TRANSCRIPTION_MODELS = ["whisper-1"]
 TEXT_MODELS = ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo"]
@@ -25,8 +36,11 @@ IMAGE_MODELS = ["dall-e-3", "dall-e-2"]
 IMAGE_SIZES = ["1024x1024", "1792x1024", "1024x1792"]  # DALL-E 3 sizes (DALL-E 2 uses 256x256, 512x512, 1024x1024)
 
 
-def get_agent(config: AgentConfig) -> VoiceToImageAgent:
-    return VoiceToImageAgent(config=config)
+def get_agent(config: AgentConfig, api_key: str) -> VoiceToImageAgent:
+    """Create agent with explicit API key (from secrets or env)"""
+    from openai import OpenAI
+    client = OpenAI(api_key=api_key)
+    return VoiceToImageAgent(client=client, config=config)
 
 
 def process_audio(agent: VoiceToImageAgent, audio_file) -> Optional[VoiceToImageResult]:
@@ -43,7 +57,15 @@ st.title("🎙️ Voice to Image Studio")
 st.caption("Record or upload a short voice note, let the agent transcribe, craft an image prompt, and visualise the final artwork.")
 
 if not OPENAI_API_KEY:
-    st.error("OPENAI_API_KEY is missing. Add it to a .env file or environment variable before running the app.")
+    st.error(
+        "⚠️ **OPENAI_API_KEY is missing.**\n\n"
+        "**For local development:** Create a `.env` file with:\n"
+        "```\nOPENAI_API_KEY=sk-your-key-here\n```\n\n"
+        "**For Streamlit Cloud deployment:** Add the secret in your app settings:\n"
+        "1. Go to your app on [share.streamlit.io](https://share.streamlit.io)\n"
+        "2. Click the **⋮** menu → **Settings**\n"
+        "3. Click **Secrets** → Add `OPENAI_API_KEY`"
+    )
     st.stop()
 
 with st.sidebar:
@@ -86,7 +108,7 @@ if trigger and uploaded_audio:
         image_model=selected_image_model,
         image_size=selected_image_size,
     )
-    agent = get_agent(agent_config)
+    agent = get_agent(agent_config, OPENAI_API_KEY)
 
     with st.spinner("Transcribing and painting..."):
         try:

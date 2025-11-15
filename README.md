@@ -57,17 +57,47 @@ Keep the terminal visible—the agent prints informative logs for each stage so 
 
 ## How It Works
 
-1. **Transcription** – `gpt-4o-mini-transcribe` converts speech to text and logs the transcript.
+1. **Transcription** – `whisper-1` converts speech to text and logs the transcript.
 2. **Prompt crafting** – `gpt-4o-mini` rewrites the transcript into a descriptive prompt (lighting, mood, subjects).
-3. **Image rendering** – `gpt-image-1` produces a PNG (default `1024x1024`), which is displayed and downloadable.
+3. **Image rendering** – `dall-e-3` or `dall-e-2` produces a PNG (default `1024x1024`), which is displayed and downloadable.
 4. **Observability** – all steps emit structured logs so you can debug slowdowns or prompt issues quickly.
+
+## Deployment to Streamlit Cloud
+
+### Step 1: Push to GitHub
+Make sure your code is in a GitHub repository (already done if you're reading this from the repo).
+
+### Step 2: Deploy to Streamlit Cloud
+1. Go to [share.streamlit.io](https://share.streamlit.io)
+2. Sign in with your GitHub account
+3. Click **"New app"**
+4. Select your repository: `rahbarnisa/CapstoneProject2`
+5. Set **Main file path**: `streamlit_app.py`
+6. Click **"Deploy"**
+
+### Step 3: Add Secrets (IMPORTANT!)
+1. Once your app is deployed, click the **⋮** (three dots) menu in the top right
+2. Select **"Settings"**
+3. Click on **"Secrets"** tab
+4. Add your OpenAI API key in TOML format:
+
+```toml
+OPENAI_API_KEY = "sk-your-actual-api-key-here"
+```
+
+5. Click **"Save"** — your app will automatically redeploy with the secrets
+
+### Security Notes
+- ✅ Secrets are encrypted and only accessible to your app
+- ✅ Never commit `.env` files or API keys to your repository
+- ✅ The `.gitignore` file protects against accidental commits
+- ✅ Secrets are different from environment variables (they're Streamlit-specific)
 
 ## Customisation Ideas
 
 - Allow multiple variations per request or seed locking for reproducibility.
 - Persist history (audio + transcript + prompt + image) in a vector store or blob storage.
 - Add a microphone recorder (e.g., `streamlit-webrtc`) for direct capture instead of file uploads.
-- Deploy to Streamlit Community Cloud or Azure App Service for easy sharing.
 
 ## Troubleshooting
 
