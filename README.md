@@ -1,38 +1,37 @@
-# Netflix Titles Assistant
+# Voice to Image Studio
 
-Minimal Streamlit experience for querying the `netflix_titles` dataset through an OpenAI-powered agent. The agent is configured for safe, read-only SQL function calling and can escalate issues by creating support tickets.
+Voice to Image Studio is a Streamlit-based agent that turns spoken ideas into visuals. A short voice memo is transcribed, rewritten into an image prompt by an LLM, rendered by an image generator, and all intermediate artifacts are surfaced in the UI and console logs.
 
 ## Features
 
-- Streamlit UI with dataset metrics, chart, sample questions, and ticket dashboard
-- OpenAI function calling with two tools: `ask_database` (SQL) and `create_support_ticket`
-- Safety guardrails: only single SELECT/WITH statements, results truncated to 200 rows, logging to console
-- Support ticket creation (agent-triggered or manual) stored at `data/support_tickets.csv`
-- Console logging for every request and SQL execution
+- 🎙️ Audio ingestion: upload any short MP3/WAV/M4A/WEBM clip.
+- ✍️ Automatic transcription and prompt authoring via OpenAI LLMs.
+- 🖼️ Image generation using DALL-E 3 or DALL-E 2 with configurable output sizes.
+- 📊 Transparent workflow: transcript, prompt, model selections, and artwork are displayed side by side.
+- 🧾 Console logging for every stage (audio receipt, transcription, prompt crafting, image rendering).
 
 ## Requirements
 
 - Python 3.11+
-- OpenAI API key with access to `gpt-4o-mini`
-- `data/netflix.db` SQLite file (already included, ~8.8k rows)
+- OpenAI account with access to:
+  - `whisper-1` (for transcription)
+  - `gpt-4o-mini` or similar (for prompt generation)
+  - `dall-e-3` or `dall-e-2` (for image generation)
+- `OPENAI_API_KEY` exported or placed inside a `.env` file
 
 ## Setup
 
 ```bash
-# optional: create virtual environment
+# 1. Optional: create a virtual environment
 python -m venv .venv
-.venv\Scripts\activate  # PowerShell / Cmd
+.\\.venv\\Scripts\\activate
 
-# install dependencies
-pip install -r requirements.txt  # or install packages listed below
-pip install streamlit pandas requests python-dotenv openai tenacity termcolor
+# 2. Install dependencies
+pip install -r requirements.txt
 
-# configure secrets
-copy .env.example .env   # or create .env manually
-open .env                # add OPENAI_API_KEY, GITHUB_TOKEN (optional), SUPPORT_REPO (optional)
+# 3. Provide your API key
+echo OPENAI_API_KEY=sk-... > .env
 ```
-
-> The project currently stores the dataset and support tickets under `data/`. Keep this folder writable.
 
 ## Running the App
 
@@ -40,50 +39,40 @@ open .env                # add OPENAI_API_KEY, GITHUB_TOKEN (optional), SUPPORT_
 streamlit run streamlit_app.py
 ```
 
-You’ll see:
+Keep the terminal visible—the agent prints informative logs for each stage so you can trace the workflow end to end.
 
-1. Dataset metrics (row count, unique titles, latest release year) and catalog composition chart
-2. Sample questions to copy/paste or adapt
-3. Chat area to ask the agent. The agent may execute SQL and display the result table and the SQL used.
-4. Support ticket form and list of the most recent tickets (`data/support_tickets.csv`)
+## End-to-End Workflow (Real Example)
 
-Console output (in Terminal) traces each request and executed SQL for auditing.
+1. **Upload & configure** – load a `sunrise_idea.m4a` memo and select the models/sizes.
 
-## Support Tickets
+![Upload audio and choose models](docs/screenshots/step1_upload.png)
 
-- Agent-created tickets land in `data/support_tickets.csv` with timestamp and priority.
-- Users can also file tickets manually in the UI when automated answers are insufficient.
-- Extend `create_support_ticket` to integrate with GitHub/Jira/Trello webhooks if needed.
+2. **Transcript & prompt** – the agent shows the exact transcript and the synthesized image prompt before generation.
 
-## Screenshots
+![Transcript and crafted prompt](docs/screenshots/step2_prompt.png)
 
-Add real screenshots to demonstrate the workflow from launch → question → result → ticket creation. For example:
+3. **Generated artwork** – the rendered image appears with download controls and a list of models used.
 
-```
-docs/
-  workflow_overview.png
-  agent_answer.png
-  ticket_confirmation.png
-```
+![Final generated image](docs/screenshots/step3_result.png)
 
-Reference them here once captured:
+## How It Works
 
-![Workflow overview](docs/workflow_overview.png)
-![Agent answer](docs/agent_answer.png)
-![Ticket confirmation](docs/ticket_confirmation.png)
+1. **Transcription** – `gpt-4o-mini-transcribe` converts speech to text and logs the transcript.
+2. **Prompt crafting** – `gpt-4o-mini` rewrites the transcript into a descriptive prompt (lighting, mood, subjects).
+3. **Image rendering** – `gpt-image-1` produces a PNG (default `1024x1024`), which is displayed and downloadable.
+4. **Observability** – all steps emit structured logs so you can debug slowdowns or prompt issues quickly.
 
-> Replace the placeholder images above with screenshots from your actual run to satisfy the assignment requirements.
+## Customisation Ideas
+
+- Allow multiple variations per request or seed locking for reproducibility.
+- Persist history (audio + transcript + prompt + image) in a vector store or blob storage.
+- Add a microphone recorder (e.g., `streamlit-webrtc`) for direct capture instead of file uploads.
+- Deploy to Streamlit Community Cloud or Azure App Service for easy sharing.
 
 ## Troubleshooting
 
-- **Module not found (streamlit/pandas/requests/python-dotenv)**: install dependencies inside your active virtual environment.
-- **OpenAI error**: check `OPENAI_API_KEY` in `.env` and your OpenAI quota.
-- **Database error**: ensure `data/netflix.db` exists and contains the expected schema.
+- **`OPENAI_API_KEY` missing** – the UI will stop and ask for the key. Ensure `.env` is in the project root or export the variable.
+- **Audio parsing errors** – stick to short clips (<60s) and supported formats. Convert unusual codecs to WAV first.
+- **Quota or permission errors** – double-check you have access to transcription, text, and image endpoints and enough credits.
 
-## Extending
-
-- Add authentication or role-based controls to restrict ticket creation.
-- Push tickets to external systems (GitHub issues, Trello cards) instead of CSV.
-- Deploy the app on Streamlit Community Cloud, Render, or HuggingFace Spaces for bonus credit.
-
-
+Enjoy turning your voice sketches into visuals! 🎨
